@@ -35,6 +35,9 @@ func Load() (Config, error) {
 		SignPin:           getEnv("SIGN_PIN", "2026"),
 		PublicFrontendURL: strings.TrimRight(getEnv("PUBLIC_FRONTEND_URL", "http://localhost:5173"), "/"),
 	}
+	if p := strings.TrimSpace(os.Getenv("PORT")); p != "" {
+		c.HTTPAddr = ":" + p
+	}
 	if c.DatabaseURL == "" {
 		return Config{}, fmt.Errorf("DATABASE_URL es obligatorio")
 	}
