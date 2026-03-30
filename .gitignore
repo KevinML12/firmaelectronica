@@ -1,0 +1,24 @@
+# Backend Go
+/backend/bin/
+/backend/*.exe
+/backend/data/
+/backend/.env
+/backend/.env.*
+!/backend/.env.example
+
+# Frontend SvelteKit
+/frontend/node_modules/
+/frontend/.svelte-kit/
+/frontend/build/
+/frontend/.vercel/
+/frontend/.env
+/frontend/.env.*
+!/frontend/.env.example
+
+# IDE / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.log
