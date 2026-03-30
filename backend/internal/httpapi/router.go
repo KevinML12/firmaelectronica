@@ -40,6 +40,7 @@ func NewRouter(d RouterDeps) http.Handler {
 		MaxAge:           300,
 	}))
 
+	r.Get("/", rootHandler())
 	r.Get("/health", healthHandler(d))
 	r.Get("/ready", readyHandler(d))
 
@@ -57,6 +58,17 @@ func NewRouter(d RouterDeps) http.Handler {
 	})
 
 	return r
+}
+
+func rootHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"service": "expedientes-oj-api",
+			"hint":    "La API está en /api; estado en /health y /ready.",
+			"paths":   []string{"/health", "/ready", "/api/expedientes"},
+		})
+	}
 }
 
 func healthHandler(d RouterDeps) http.HandlerFunc {
