@@ -20,6 +20,8 @@ type Config struct {
 	SignPin string
 	// URL del frontend para enlaces en QR (ej. https://mi-app.vercel.app)
 	PublicFrontendURL string
+	// Si true (defecto), aplica migraciones SQL al arrancar el servidor.
+	AutoMigrate bool
 }
 
 func Load() (Config, error) {
@@ -34,6 +36,7 @@ func Load() (Config, error) {
 		StoragePath:       getEnv("STORAGE_PATH", "./data/storage"),
 		SignPin:           getEnv("SIGN_PIN", "2026"),
 		PublicFrontendURL: strings.TrimRight(getEnv("PUBLIC_FRONTEND_URL", "http://localhost:5173"), "/"),
+		AutoMigrate:       autoMigrateDefault(getEnv("AUTO_MIGRATE", "true")),
 	}
 	if p := strings.TrimSpace(os.Getenv("PORT")); p != "" {
 		c.HTTPAddr = ":" + p
@@ -42,6 +45,15 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("DATABASE_URL es obligatorio")
 	}
 	return c, nil
+}
+
+func autoMigrateDefault(v string) bool {
+	switch strings.ToLower(strings.TrimSpace(v)) {
+	case "false", "0", "no", "off":
+		return false
+	default:
+		return true
+	}
 }
 
 func getEnv(key, def string) string {

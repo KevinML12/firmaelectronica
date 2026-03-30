@@ -14,6 +14,7 @@ import (
 	"github.com/firmaelectronica/expedientes-oj/internal/config"
 	"github.com/firmaelectronica/expedientes-oj/internal/db"
 	"github.com/firmaelectronica/expedientes-oj/internal/httpapi"
+	"github.com/firmaelectronica/expedientes-oj/internal/migrate"
 )
 
 func main() {
@@ -30,6 +31,13 @@ func main() {
 		log.Fatalf("db: %v", err)
 	}
 	defer pool.Close()
+
+	if cfg.AutoMigrate {
+		if err := migrate.Up(ctx, pool); err != nil {
+			log.Fatalf("migraciones: %v", err)
+		}
+		log.Print("migraciones: ok")
+	}
 
 	if err := os.MkdirAll(cfg.StoragePath, 0750); err != nil {
 		log.Fatalf("storage: %v", err)
