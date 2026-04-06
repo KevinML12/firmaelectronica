@@ -27,12 +27,21 @@ type Config struct {
 func Load() (Config, error) {
 	_ = os.Setenv("TZ", "America/Guatemala")
 
+	defCORS := "http://localhost:5173,http://127.0.0.1:5173"
+	corsRaw := strings.TrimSpace(os.Getenv("CORS_ORIGINS"))
+	if corsRaw == "" {
+		corsRaw = strings.TrimSpace(os.Getenv("CORS_ORIGIN"))
+	}
+	if corsRaw == "" {
+		corsRaw = defCORS
+	}
+
 	c := Config{
-		HTTPAddr:     getEnv("HTTP_ADDR", ":8080"),
-		DatabaseURL:  os.Getenv("DATABASE_URL"),
-		Env:          getEnv("ENV", "development"),
-		PublicAPIURL: getEnv("PUBLIC_API_URL", "http://localhost:8080"),
-		CORSOrigins:       splitComma(getEnv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")),
+		HTTPAddr:          getEnv("HTTP_ADDR", ":8080"),
+		DatabaseURL:       os.Getenv("DATABASE_URL"),
+		Env:               getEnv("ENV", "development"),
+		PublicAPIURL:      normalizeHTTPURL(getEnv("PUBLIC_API_URL", "http://localhost:8080")),
+		CORSOrigins:       splitComma(corsRaw),
 		StoragePath:       getEnv("STORAGE_PATH", "./data/storage"),
 		SignPin:           getEnv("SIGN_PIN", "2026"),
 		PublicFrontendURL: strings.TrimRight(getEnv("PUBLIC_FRONTEND_URL", "http://localhost:5173"), "/"),
@@ -45,6 +54,18 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("DATABASE_URL es obligatorio")
 	}
 	return c, nil
+}
+
+// normalizeHTTPURL añade https:// si falta esquema (evita enlaces rotos en PDF/QR).
+func normalizeHTTPURL(u string) string {
+	u = strings.TrimSpace(u)
+	if u == "" {
+		return u
+	}
+	if strings.HasPrefix(strings.ToLower(u), "http://") || strings.HasPrefix(strings.ToLower(u), "https://") {
+		return strings.TrimRight(u, "/")
+	}
+	return "https://" + strings.TrimRight(strings.TrimPrefix(u, "/"), "/")
 }
 
 func autoMigrateDefault(v string) bool {
