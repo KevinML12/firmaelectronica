@@ -2,7 +2,13 @@ import { pushApiLog } from '$lib/api/log';
 
 /** URL base del API (sin barra final). Vacío = peticiones relativas al mismo host (Vercel). */
 export function getApiBase(): string {
-	return (import.meta.env.PUBLIC_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
+	let b = (import.meta.env.PUBLIC_API_URL as string | undefined)?.trim().replace(/\/$/, '') ?? '';
+	if (!b) return '';
+	// Sin esquema el fetch es relativo al sitio de Vercel → HTML y "Respuesta no es JSON"
+	if (!/^https?:\/\//i.test(b)) {
+		b = `https://${b}`;
+	}
+	return b;
 }
 
 function apiUrl(path: string): string {
@@ -111,13 +117,18 @@ async function parseJSON<T>(r: Response): Promise<T> {
 	try {
 		return JSON.parse(text) as T;
 	} catch {
+		const preview = text.slice(0, 400);
 		pushApiLog({
 			method: '—',
 			url: '(parse JSON)',
 			status: r.status,
 			ms: 0,
 			ok: false,
-			detail: text.slice(0, 500)
+			detail: preview
+		});
+		console.error('[expedientes API] La respuesta no es JSON', {
+			status: r.status,
+			preview: preview.replace(/\s+/g, ' ').trim()
 		});
 		throw new ApiError('Respuesta no es JSON', r.status, text);
 	}
