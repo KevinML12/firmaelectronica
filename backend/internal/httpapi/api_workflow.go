@@ -202,7 +202,7 @@ func (d *RouterDeps) postFirmarProcesado(w http.ResponseWriter, r *http.Request)
 
 	uid, ok := usuarioDemoPorRol(body.Rol)
 	if !ok {
-		httpError(w, http.StatusBadRequest, "rol inválido: use juez, secretario u oficial_v")
+		httpError(w, http.StatusBadRequest, "rol inválido: ver lista de roles en documentación del tramitador")
 		return
 	}
 
@@ -311,6 +311,20 @@ func usuarioDemoPorRol(rol string) (uuid.UUID, bool) {
 		return uuid.MustParse("33333333-3333-4333-8333-333333333302"), true
 	case "oficial_v":
 		return uuid.MustParse("33333333-3333-4333-8333-333333333303"), true
+	case "parte_actora":
+		return uuid.MustParse("33333333-3333-4333-8333-333333333304"), true
+	case "patrono_abogado":
+		return uuid.MustParse("33333333-3333-4333-8333-333333333305"), true
+	case "inspectora_trabajo":
+		return uuid.MustParse("33333333-3333-4333-8333-333333333306"), true
+	case "representante_demandada":
+		return uuid.MustParse("33333333-3333-4333-8333-333333333307"), true
+	case "magistrado":
+		return uuid.MustParse("33333333-3333-4333-8333-333333333308"), true
+	case "notificador":
+		return uuid.MustParse("33333333-3333-4333-8333-333333333309"), true
+	case "ministro_ejecutor":
+		return uuid.MustParse("33333333-3333-4333-8333-333333333310"), true
 	default:
 		return uuid.Nil, false
 	}
@@ -324,8 +338,22 @@ func etiquetaRol(rol string) string {
 		return "SECRETARIO(A)"
 	case "oficial_v":
 		return "OFICIAL V"
+	case "parte_actora":
+		return "PARTE ACTORA / COMPARECIENTE"
+	case "patrono_abogado":
+		return "ABOGADO PATRONO"
+	case "inspectora_trabajo":
+		return "INSPECTORA DE TRABAJO"
+	case "representante_demandada":
+		return "REPRESENTANTE DEMANDADA"
+	case "magistrado":
+		return "MAGISTRADO(A)"
+	case "notificador":
+		return "NOTIFICADOR OJ"
+	case "ministro_ejecutor":
+		return "MINISTRO EJECUTOR"
 	default:
-		return strings.ToUpper(rol)
+		return strings.ToUpper(strings.ReplaceAll(rol, "_", " "))
 	}
 }
 

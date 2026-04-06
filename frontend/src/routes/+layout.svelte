@@ -1,6 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import { page } from '$app/stores';
+	import ApiLogPanel from '$lib/components/ApiLogPanel.svelte';
 </script>
 
 <div class="min-h-dvh flex flex-col">
@@ -15,4 +16,5 @@
 	<main class="flex flex-1 flex-col">
 		<slot />
 	</main>
+	<ApiLogPanel />
 </div>

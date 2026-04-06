@@ -1,4 +1,46 @@
-const base = () => (import.meta.env.PUBLIC_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
+import { pushApiLog } from '$lib/api/log';
+
+/** URL base del API (sin barra final). Vacío = peticiones relativas al mismo host (Vercel). */
+export function getApiBase(): string {
+	return (import.meta.env.PUBLIC_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
+}
+
+function apiUrl(path: string): string {
+	const b = getApiBase();
+	const p = path.startsWith('/') ? path : `/${path}`;
+	return `${b}${p}`;
+}
+
+/** fetch con registro en el visor de logs (panel API). */
+async function apiFetch(method: string, path: string, init?: RequestInit): Promise<Response> {
+	const url = apiUrl(path);
+	const t0 = typeof performance !== 'undefined' ? performance.now() : Date.now();
+	try {
+		const r = await fetch(url, { ...init, method });
+		const ms =
+			typeof performance !== 'undefined'
+				? Math.round(performance.now() - t0)
+				: Math.round(Date.now() - t0);
+		let detail: string | undefined;
+		if (!r.ok) {
+			try {
+				detail = (await r.clone().text()).slice(0, 600);
+			} catch {
+				detail = '(no se pudo leer cuerpo)';
+			}
+		}
+		pushApiLog({ method, url, status: r.status, ms, ok: r.ok, detail });
+		return r;
+	} catch (e) {
+		const ms =
+			typeof performance !== 'undefined'
+				? Math.round(performance.now() - t0)
+				: Math.round(Date.now() - t0);
+		const msg = e instanceof Error ? e.message : String(e);
+		pushApiLog({ method, url, status: 0, ms, ok: false, detail: msg });
+		throw e;
+	}
+}
 
 export type Juzgado = {
 	codigo: string;
@@ -69,19 +111,29 @@ async function parseJSON<T>(r: Response): Promise<T> {
 	try {
 		return JSON.parse(text) as T;
 	} catch {
+		pushApiLog({
+			method: '—',
+			url: '(parse JSON)',
+			status: r.status,
+			ms: 0,
+			ok: false,
+			detail: text.slice(0, 500)
+		});
 		throw new ApiError('Respuesta no es JSON', r.status, text);
 	}
 }
 
+/** GET /api/expedientes */
 export async function listExpedientes(): Promise<ExpedienteListItem[]> {
-	const r = await fetch(`${base()}/api/expedientes`);
+	const r = await apiFetch('GET', '/api/expedientes');
 	const data = await parseJSON<ExpedienteListItem[] | { error?: string }>(r);
 	if (!r.ok) throw new ApiError((data as { error?: string }).error ?? 'Error', r.status, data);
 	return data as ExpedienteListItem[];
 }
 
+/** GET /api/expedientes/:id */
 export async function getExpediente(id: string): Promise<ExpedienteDetalle> {
-	const r = await fetch(`${base()}/api/expedientes/${encodeURIComponent(id)}`);
+	const r = await apiFetch('GET', `/api/expedientes/${encodeURIComponent(id)}`);
 	const data = await parseJSON<ExpedienteDetalle & { error?: string }>(r);
 	if (!r.ok) throw new ApiError(data.error ?? 'Expediente no encontrado', r.status, data);
 	const d = data as ExpedienteDetalle;
@@ -92,6 +144,7 @@ export async function getExpediente(id: string): Promise<ExpedienteDetalle> {
 	return d;
 }
 
+/** POST /api/expedientes/:id/documentos (multipart) */
 export async function uploadDocumento(
 	expedienteId: string,
 	file: File,
@@ -100,11 +153,16 @@ export async function uploadDocumento(
 	const fd = new FormData();
 	fd.append('file', file);
 	if (titulo) fd.append('titulo', titulo);
-	const r = await fetch(`${base()}/api/expedientes/${encodeURIComponent(expedienteId)}/documentos`, {
-		method: 'POST',
+	const r = await apiFetch('POST', `/api/expedientes/${encodeURIComponent(expedienteId)}/documentos`, {
 		body: fd
 	});
-	const data = await parseJSON<{ error?: string; mensaje_corto?: string; folio_inicio?: number; folio_fin?: number; hojas?: number }>(r);
+	const data = await parseJSON<{
+		error?: string;
+		mensaje_corto?: string;
+		folio_inicio?: number;
+		folio_fin?: number;
+		hojas?: number;
+	}>(r);
 	if (!r.ok) throw new ApiError(data.error ?? 'No se pudo subir', r.status, data);
 	return data as {
 		mensaje_corto: string;
@@ -114,9 +172,9 @@ export async function uploadDocumento(
 	};
 }
 
+/** POST /api/expedientes/:id/folios/reordenar */
 export async function reordenarFolios(expedienteId: string, ordenIds: string[], motivo?: string): Promise<void> {
-	const r = await fetch(`${base()}/api/expedientes/${encodeURIComponent(expedienteId)}/folios/reordenar`, {
-		method: 'POST',
+	const r = await apiFetch('POST', `/api/expedientes/${encodeURIComponent(expedienteId)}/folios/reordenar`, {
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ orden: ordenIds, motivo: motivo ?? '' })
 	});
@@ -124,6 +182,7 @@ export async function reordenarFolios(expedienteId: string, ordenIds: string[], 
 	if (!r.ok) throw new ApiError(data.error ?? 'No se pudo guardar el orden', r.status, data);
 }
 
+/** POST /api/expedientes/:eid/documentos/:did/procesar */
 export async function procesarDocumento(
 	expedienteId: string,
 	documentoId: string
@@ -135,9 +194,9 @@ export async function procesarDocumento(
 	url_descarga: string;
 	mensaje: string;
 }> {
-	const r = await fetch(
-		`${base()}/api/expedientes/${encodeURIComponent(expedienteId)}/documentos/${encodeURIComponent(documentoId)}/procesar`,
-		{ method: 'POST' }
+	const r = await apiFetch(
+		'POST',
+		`/api/expedientes/${encodeURIComponent(expedienteId)}/documentos/${encodeURIComponent(documentoId)}/procesar`
 	);
 	const data = await parseJSON<{ error?: string } & Record<string, string>>(r);
 	if (!r.ok) throw new ApiError(data.error ?? 'No se pudo procesar', r.status, data);
@@ -151,12 +210,12 @@ export async function procesarDocumento(
 	};
 }
 
+/** POST /api/documentos-procesados/:id/firmar */
 export async function firmarDocumentoProcesado(
 	procesadoId: string,
 	body: { pin: string; rol: string; nombre_acta?: string }
 ): Promise<{ ok: string; nombre: string }> {
-	const r = await fetch(`${base()}/api/documentos-procesados/${encodeURIComponent(procesadoId)}/firmar`, {
-		method: 'POST',
+	const r = await apiFetch('POST', `/api/documentos-procesados/${encodeURIComponent(procesadoId)}/firmar`, {
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({
 			pin: body.pin,
@@ -169,9 +228,9 @@ export async function firmarDocumentoProcesado(
 	return data as { ok: string; nombre: string };
 }
 
+/** POST /api/expedientes/:id/cerrar */
 export async function cerrarExpediente(expedienteId: string, pin: string): Promise<void> {
-	const r = await fetch(`${base()}/api/expedientes/${encodeURIComponent(expedienteId)}/cerrar`, {
-		method: 'POST',
+	const r = await apiFetch('POST', `/api/expedientes/${encodeURIComponent(expedienteId)}/cerrar`, {
 		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ pin })
 	});
@@ -179,8 +238,9 @@ export async function cerrarExpediente(expedienteId: string, pin: string): Promi
 	if (!r.ok) throw new ApiError(data.error ?? 'No se pudo cerrar', r.status, data);
 }
 
+/** URL pública de descarga PDF (no dispara fetch hasta que el usuario abre el enlace). */
 export function urlDescargaPDF(procesadoId: string, qrToken: string): string {
-	return `${base()}/api/public/documentos-procesados/${encodeURIComponent(procesadoId)}/pdf?token=${encodeURIComponent(qrToken)}`;
+	return `${getApiBase()}/api/public/documentos-procesados/${encodeURIComponent(procesadoId)}/pdf?token=${encodeURIComponent(qrToken)}`;
 }
 
 export type ValidacionPublica = {
@@ -194,8 +254,9 @@ export type ValidacionPublica = {
 	mensaje: string;
 };
 
+/** GET /api/public/validar/:token */
 export async function fetchValidacionPublica(token: string): Promise<ValidacionPublica> {
-	const r = await fetch(`${base()}/api/public/validar/${encodeURIComponent(token)}`);
+	const r = await apiFetch('GET', `/api/public/validar/${encodeURIComponent(token)}`);
 	const data = await parseJSON<ValidacionPublica & { error?: string }>(r);
 	if (!r.ok) throw new ApiError(data.error ?? 'No encontrado', r.status, data);
 	return data as ValidacionPublica;

@@ -39,7 +39,31 @@
 	let ordenSucio = false;
 	let fileInput: HTMLInputElement;
 
-	let rolFirmar: 'juez' | 'secretario' | 'oficial_v' | null = null;
+	/** Valor enviado al API (enum rol_firma_oj en BD). Vacío = no seleccionado. */
+	let rolFirmar = '';
+
+	const rolesFirma: { grupo: string; items: { value: string; label: string }[] }[] = [
+		{
+			grupo: 'Órgano judicial (OJ)',
+			items: [
+				{ value: 'juez', label: 'Juez' },
+				{ value: 'secretario', label: 'Secretario(a)' },
+				{ value: 'oficial_v', label: 'Oficial V' },
+				{ value: 'notificador', label: 'Notificador OJ' },
+				{ value: 'magistrado', label: 'Magistrado(a) sala apelaciones' },
+				{ value: 'ministro_ejecutor', label: 'Ministro ejecutor' }
+			]
+		},
+		{
+			grupo: 'Laboral — partes y MTPS',
+			items: [
+				{ value: 'parte_actora', label: 'Parte actora / compareciente' },
+				{ value: 'patrono_abogado', label: 'Abogado patrono' },
+				{ value: 'representante_demandada', label: 'Representante demandada' },
+				{ value: 'inspectora_trabajo', label: 'Inspectora de Trabajo (MTPS)' }
+			]
+		}
+	];
 	let nombreActa = '';
 	let procSeleccionadoFirmar: string | null = null;
 
@@ -181,7 +205,7 @@
 	}
 
 	async function ejecutarFirma() {
-		if (!procSeleccionadoFirmar || !rolFirmar) return;
+		if (!procSeleccionadoFirmar || !rolFirmar.trim()) return;
 		const pin = getPinForServer();
 		if (!pin) {
 			errorMsg = 'Meta el PIN primero (modal).';
@@ -209,8 +233,8 @@
 
 	function clickFirmar(procId: string) {
 		procSeleccionadoFirmar = procId;
-		if (!rolFirmar) {
-			errorMsg = 'Elija rol (juez / secretario / oficial V).';
+		if (!rolFirmar.trim()) {
+			errorMsg = 'Elija el rol de quien firma en el acta.';
 			return;
 		}
 		needPinThen(ejecutarFirma);
@@ -332,6 +356,22 @@
 			<p class="text-slate-600">{expediente.tipo_proceso || '—'} · Estado: {expediente.estado}</p>
 		</section>
 
+		<section
+			class="mb-6 rounded-2xl border border-sky-200 bg-sky-50/90 p-4 text-base leading-snug text-sky-950"
+			aria-label="Cómo funciona la subida"
+		>
+			<p class="font-bold text-sky-900">Libertad de contenido</p>
+			<p class="mt-1">
+				Podés subir cualquier <strong>PDF</strong> ya armado (desde Word con nuestras plantillas o no). El sistema le
+				pondrá folios, código de verificación y <strong>QR</strong> hacia la página pública en Vercel al
+				<strong>procesar</strong>.
+			</p>
+			<p class="mt-2 text-sm text-sky-900/90">
+				<strong>Notificaciones OJ</strong> (casillero, constancia electrónica): la idea es que esas salgan
+				<strong>generadas completas</strong> por el sistema; ese flujo aparte aún se conecta al generador automático.
+			</p>
+		</section>
+
 		<section class="grid gap-4 sm:grid-cols-2">
 			<button
 				type="button"
@@ -448,36 +488,28 @@
 							class="mb-4 w-full rounded-xl border-2 border-slate-300 p-4 text-lg"
 							disabled={expediente.estado === 'cerrado'}
 						/>
-						<div class="mb-4 flex flex-wrap gap-2">
-							<button
-								type="button"
-								class="rounded-xl px-4 py-3 text-lg {rolFirmar === 'juez'
-									? 'bg-oj-gold text-oj-navy'
-									: 'bg-slate-200'}"
-								disabled={expediente.estado === 'cerrado'}
-								on:click={() => (rolFirmar = 'juez')}>Juez</button
-							>
-							<button
-								type="button"
-								class="rounded-xl px-4 py-3 text-lg {rolFirmar === 'secretario'
-									? 'bg-oj-gold text-oj-navy'
-									: 'bg-slate-200'}"
-								disabled={expediente.estado === 'cerrado'}
-								on:click={() => (rolFirmar = 'secretario')}>Secretario</button
-							>
-							<button
-								type="button"
-								class="rounded-xl px-4 py-3 text-lg {rolFirmar === 'oficial_v'
-									? 'bg-oj-gold text-oj-navy'
-									: 'bg-slate-200'}"
-								disabled={expediente.estado === 'cerrado'}
-								on:click={() => (rolFirmar = 'oficial_v')}>Oficial V</button
-							>
-						</div>
+						<label class="mb-2 block text-sm font-semibold text-slate-700" for="rol-firma-{p.id}"
+							>Rol de quien firma (debe coincidir con la plantilla / acta)</label
+						>
+						<select
+							id="rol-firma-{p.id}"
+							class="mb-4 w-full rounded-xl border-2 border-slate-300 bg-white p-4 text-lg"
+							disabled={expediente.estado === 'cerrado'}
+							bind:value={rolFirmar}
+						>
+							<option value="">— Elija rol —</option>
+							{#each rolesFirma as g}
+								<optgroup label={g.grupo}>
+									{#each g.items as it}
+										<option value={it.value}>{it.label}</option>
+									{/each}
+								</optgroup>
+							{/each}
+						</select>
 						<button
 							type="button"
 							class="btn-huge btn-safe w-full"
-							disabled={!rolFirmar || firmandoProc === p.id || expediente.estado === 'cerrado'}
+							disabled={!rolFirmar.trim() || firmandoProc === p.id || expediente.estado === 'cerrado'}
 							on:click={() => clickFirmar(p.id)}
 						>
 							{firmandoProc === p.id ? 'Firmando…' : 'Firmar con PIN'}
