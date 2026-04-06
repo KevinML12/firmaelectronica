@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Genera DOCX mínimos (OOXML) con marcadores {{...}} y bloques de firma por rol."""
+"""Genera DOCX mínimos (OOXML) con marcadores {{...}}. Sin huecos de firma manuscrita: la firma electrónica y sellos van en el PDF vía tramitador."""
 from __future__ import annotations
 
 import zipfile
@@ -68,14 +68,6 @@ TEMPLATES: dict[str, list[str]] = {
 		"{{CUERPO_DENUNCIA}}",
 		"",
 		"Audiencia fijada: {{FECHA_AUDIENCIA}}",
-		"",
-		"_________________________",
-		"F. {{FIRMA_PARTE_ACTORA}}  → rol sistema: parte_actora",
-		"PARTE DENUNCIANTE / COMPARECIENTE",
-		"",
-		"_________________________",
-		"F. {{FIRMA_INSPECTORA_TRABAJO}}  → rol sistema: inspectora_trabajo",
-		"INSPECTORA DE TRABAJO — MTPS",
 	],
 	"02_mtps_cedula_citacion.docx": [
 		"PLANTILLA — Cédula de citación (conciliación MTPS)",
@@ -83,10 +75,6 @@ TEMPLATES: dict[str, list[str]] = {
 		"Interpuesta por: {{ACTOR}} · Citado: {{DEMANDADO_CITACION}}",
 		"",
 		"{{TEXTO_CITACION}}",
-		"",
-		"_________________________",
-		"F. {{FIRMA_INSPECTORA_TRABAJO}}  → rol sistema: inspectora_trabajo",
-		"INSPECTORA DE TRABAJO — DELEGACIÓN DEPARTAMENTAL",
 	],
 	"03_mtps_acta_comparecencia.docx": [
 		"PLANTILLA — Acta de comparecencia / audiencia / agotamiento vía administrativa",
@@ -95,15 +83,6 @@ TEMPLATES: dict[str, list[str]] = {
 		"Comparecientes: {{COMPARECIENTES}}",
 		"",
 		"{{ACTA_DESARROLLO}}",
-		"",
-		"_________________________",
-		"F. {{FIRMA_PARTE_ACTORA}}  → parte_actora",
-		"",
-		"_________________________",
-		"F. {{FIRMA_REPRESENTANTE_DEMANDADA}}  → representante_demandada",
-		"",
-		"_________________________",
-		"F. {{FIRMA_INSPECTORA_TRABAJO}}  → inspectora_trabajo",
 	],
 	"04_memorial_demanda_juzgado.docx": [
 		"PLANTILLA — Demanda / memorial (juicio ordinario laboral — juzgado)",
@@ -117,13 +96,6 @@ TEMPLATES: dict[str, list[str]] = {
 		"{{PRUEBAS_PETICIONES}}",
 		"",
 		"Lugar y fecha: {{LUGAR_FECHA}}",
-		"",
-		"_________________________",
-		"F. {{FIRMA_PARTE_ACTORA}}  → parte_actora",
-		"",
-		"_________________________",
-		"F. {{FIRMA_ABOGADO_PATRONO}}  → patrono_abogado",
-		"EN AUXILIO, DIRECCIÓN Y PROCURACIÓN",
 	],
 	"05_memorial_pliego_posiciones.docx": [
 		"PLANTILLA — Plica / pliego de posiciones (confesional)",
@@ -133,9 +105,6 @@ TEMPLATES: dict[str, list[str]] = {
 		"",
 		"Preguntas (posiciones):",
 		"{{PLIEGO_POSICIONES}}",
-		"",
-		"_________________________",
-		"F. {{FIRMA_PARTE_ACTORA}}  → parte_actora",
 	],
 	"06_juzgado_resolucion_o_auto.docx": [
 		"PLANTILLA — Resolución / auto (juzgado 1.ª instancia laboral)",
@@ -145,12 +114,6 @@ TEMPLATES: dict[str, list[str]] = {
 		"",
 		"RESUELVE / AUTO:",
 		"{{FALLO}}",
-		"",
-		"_________________________",
-		"F. {{FIRMA_JUEZ}}  → rol sistema: juez",
-		"",
-		"_________________________",
-		"F. {{FIRMA_SECRETARIO}}  → rol sistema: secretario",
 	],
 	"07_sala_resolucion_apelacion.docx": [
 		"PLANTILLA — Auto / resolución (Sala de Apelaciones)",
@@ -160,12 +123,6 @@ TEMPLATES: dict[str, list[str]] = {
 		"",
 		"RESUELVE:",
 		"{{FALLO_SALA}}",
-		"",
-		"_________________________",
-		"F. {{FIRMA_MAGISTRADO}}  → rol sistema: magistrado",
-		"",
-		"_________________________",
-		"F. {{FIRMA_SECRETARIO}}  → rol sistema: secretario",
 	],
 	"08_oj_notificacion_casillero.docx": [
 		"PLANTILLA — Constancia de notificación electrónica (OJ / casillero)",
@@ -174,10 +131,6 @@ TEMPLATES: dict[str, list[str]] = {
 		"Resolución publicada: {{TITULO_RESOLUCION}} · Fecha publicación: {{FECHA_PUBLICACION}}",
 		"",
 		"{{TEXTO_ADICIONAL}}",
-		"",
-		"_________________________",
-		"F. {{FIRMA_NOTIFICADOR}}  → rol sistema: notificador",
-		"OFICIAL NOTIFICADOR — ORGANISMO JUDICIAL",
 	],
 	"09_juzgado_oficio_ministro_ejecutor.docx": [
 		"PLANTILLA — Oficio / despacho a ministro ejecutor (ejecución laboral)",
@@ -185,12 +138,6 @@ TEMPLATES: dict[str, list[str]] = {
 		"",
 		"{{CUERPO_OFICIO}}",
 		"Monto: {{MONTO}} · Dirección ejecución: {{DIRECCION}}",
-		"",
-		"_________________________",
-		"F. {{FIRMA_JUEZ}}  → juez",
-		"",
-		"_________________________",
-		"F. {{FIRMA_SECRETARIO}}  → secretario",
 		"",
 		"(Ministro ejecutor actúa en diligencia externa; firma en acta propia: ministro_ejecutor)",
 	],

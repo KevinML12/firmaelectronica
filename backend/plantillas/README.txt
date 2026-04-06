@@ -9,7 +9,7 @@ Modelo de producto (intención)
 
 - Carpeta docx/: archivos generados con build_docx.py (volver a ejecutar si cambia el script).
 - Marcadores {{VARIABLE}} para reemplazo manual o futuro motor de plantillas.
-- Cada bloque "F. {{...}}" indica el rol del sistema (tramitador → firma electrónica en PDF) que debe usarse al estampar la última hoja.
+- No se reservan líneas de firma manuscrita en el DOCX: la firma electrónica y sellos se estampan en el PDF al procesar/firmar desde el tramitador (última hoja). Los roles sugeridos siguen en el API y en internal/plantillas/tipo.go.
 
 Archivos:
   01_mtps_*        Ministerio de Trabajo (adjudicación, cédula, acta).
