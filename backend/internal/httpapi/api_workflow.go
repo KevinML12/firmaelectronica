@@ -239,7 +239,21 @@ func (d *RouterDeps) postFirmarProcesado(w http.ResponseWriter, r *http.Request)
 	sum := md5.Sum([]byte(procID + nombreMostrar + body.Rol + time.Now().UTC().Format(time.RFC3339Nano)))
 	hashInterno := strings.ToUpper(hex.EncodeToString(sum[:]))
 
-	if err := pdfstamp.FirmaElectrónicaBloque(inPath, tmpPath, strings.ToUpper(nombreMostrar), hashInterno, etiquetaRol(body.Rol), n); err != nil {
+	var jNom, jDep string
+	_ = d.Pool.QueryRow(ctx, `
+		SELECT COALESCE(j.nombre, ''), COALESCE(j.departamento, '')
+		FROM expedientes e JOIN juzgados j ON j.id = e.juzgado_id
+		WHERE e.id = $1::uuid
+	`, expID).Scan(&jNom, &jDep)
+	dependenciaPDF := strings.TrimSpace(jNom)
+	if t := strings.TrimSpace(jDep); t != "" {
+		if dependenciaPDF != "" {
+			dependenciaPDF += " · "
+		}
+		dependenciaPDF += t
+	}
+
+	if err := pdfstamp.FirmaElectrónicaBloque(inPath, tmpPath, etiquetaRol(body.Rol), nombreMostrar, hashInterno, dependenciaPDF, n); err != nil {
 		httpError(w, http.StatusInternalServerError, err.Error())
 		return
 	}

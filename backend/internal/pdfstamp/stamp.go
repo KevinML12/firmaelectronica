@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
@@ -96,15 +97,24 @@ func writeQRTemp(url string) (string, error) {
 	return filepath.Clean(name), nil
 }
 
-// FirmaElectrónicaBloque añade al final de la última hoja el bloque tipo notificación OJ.
-func FirmaElectrónicaBloque(srcPath, dstPath string, nombre, hashInterno, rolEtiqueta string, lastPage int) error {
-	text := fmt.Sprintf(
-		"Firma Electrónica Interna:\n%s\n%s\n%s\n\nFirma Electrónica Institucional ORGANISMO JUDICIAL:\n[registro en sistema — validar con QR]",
-		nombre, hashInterno, rolEtiqueta,
-	)
+// FirmaElectrónicaBloque añade al pie de la última hoja solo: rol, nombre, hash y dependencia (opcional).
+// Las rúbricas gráficas pueden añadirse aparte cuando haya activos.
+func FirmaElectrónicaBloque(srcPath, dstPath string, rolEtiqueta, nombre, hashInterno, dependencia string, lastPage int) error {
+	var b strings.Builder
+	b.WriteString("Rol: ")
+	b.WriteString(strings.TrimSpace(rolEtiqueta))
+	b.WriteString("\nNombre: ")
+	b.WriteString(strings.TrimSpace(nombre))
+	b.WriteString("\nHash: ")
+	b.WriteString(strings.TrimSpace(hashInterno))
+	if dep := strings.TrimSpace(dependencia); dep != "" {
+		b.WriteString("\nDependencia: ")
+		b.WriteString(dep)
+	}
+	b.WriteString("\n")
 	wm, err := api.TextWatermark(
-		text,
-		"font:Helvetica, points:9, scale:1 abs, pos:bc, off:0 52, fillcol:#0f172a, rot:0",
+		b.String(),
+		"font:Helvetica, points:8, scale:1 abs, pos:bc, off:0 48, fillcol:#0f172a, rot:0",
 		true, false, types.POINTS,
 	)
 	if err != nil {
