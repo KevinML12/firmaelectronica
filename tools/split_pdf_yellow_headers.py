@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """
+[Legado] Para pipeline completo: prepare_expediente_firma_electronica.py
+
 Divide un PDF en archivos por secciones marcadas con rectángulos de relleno amarillo
 (RGB ~1,1,0) en la parte superior de la página (cabecera tipo enunciado).
 

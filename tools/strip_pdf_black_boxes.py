@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """
+[Legado] Para flujo completo (sin amarillo, sellos, partes, cédulas): usar
+prepare_expediente_firma_electronica.py
+
 Quita marcos negros (trazo ~0.75 pt) típicos de plantillas MTPS/OJ en PDF:
 
 - Cabecera ancha con fondo blanco + título en amarillo: solo borra la «caja» negra
