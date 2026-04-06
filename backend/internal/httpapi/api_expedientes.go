@@ -8,16 +8,32 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/firmaelectronica/expedientes-oj/internal/folio"
 	"github.com/firmaelectronica/expedientes-oj/internal/hashutil"
 	"github.com/firmaelectronica/expedientes-oj/internal/pdfpages"
+	"github.com/firmaelectronica/expedientes-oj/internal/plantillas"
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
 const maxUploadBytes = 40 << 20
+
+func enrichTipoPlantilla(tipoOut *string, etiquetaOut *string, plantillaOut *string, rolesOut *[]string, tipoDB string) {
+	inf := plantillas.PorTipo(tipoDB)
+	*tipoOut = inf.CodigoTipo
+	*etiquetaOut = inf.Etiqueta
+	*plantillaOut = inf.Plantilla
+	if len(inf.Roles) > 0 {
+		cp := make([]string, len(inf.Roles))
+		copy(cp, inf.Roles)
+		*rolesOut = cp
+	} else {
+		*rolesOut = nil
+	}
+}
 
 type expedienteListItem struct {
 	ID          string `json:"id"`
@@ -40,20 +56,28 @@ type expedienteDetalle struct {
 }
 
 type docResumen struct {
-	ID          string `json:"id"`
-	Titulo      string `json:"titulo,omitempty"`
-	PageCount   int    `json:"page_count"`
-	StorageKey  string `json:"storage_key"`
-	CreatedAt   string `json:"created_at"`
+	ID             string   `json:"id"`
+	Titulo         string   `json:"titulo,omitempty"`
+	Tipo           string   `json:"tipo,omitempty"`
+	TipoEtiqueta   string   `json:"tipo_etiqueta,omitempty"`
+	PlantillaDOCX  string   `json:"plantilla_docx,omitempty"`
+	RolesSugeridos []string `json:"roles_sugeridos,omitempty"`
+	PageCount      int      `json:"page_count"`
+	StorageKey     string   `json:"storage_key"`
+	CreatedAt      string   `json:"created_at"`
 }
 
 type procResumen struct {
-	ID                 string `json:"id"`
-	DocumentoID        string `json:"documento_id"`
-	CodigoVerificacion string `json:"codigo_verificacion"`
-	QRToken            string `json:"qr_token"`
-	StorageKeySalida   string `json:"storage_key_salida"`
-	CreatedAt          string `json:"created_at"`
+	ID                 string   `json:"id"`
+	DocumentoID        string   `json:"documento_id"`
+	CodigoVerificacion string   `json:"codigo_verificacion"`
+	QRToken            string   `json:"qr_token"`
+	StorageKeySalida   string   `json:"storage_key_salida"`
+	CreatedAt          string   `json:"created_at"`
+	Tipo               string   `json:"tipo,omitempty"`
+	TipoEtiqueta       string   `json:"tipo_etiqueta,omitempty"`
+	PlantillaDOCX      string   `json:"plantilla_docx,omitempty"`
+	RolesSugeridos     []string `json:"roles_sugeridos,omitempty"`
 }
 
 type hojaItem struct {
@@ -166,7 +190,7 @@ func (d *RouterDeps) getExpediente(w http.ResponseWriter, r *http.Request) {
 	}
 
 	docs, err := d.Pool.Query(ctx, `
-		SELECT id::text, COALESCE(titulo, ''), page_count, storage_key, created_at::text
+		SELECT id::text, COALESCE(titulo, ''), page_count, storage_key, created_at::text, tipo::text
 		FROM documentos WHERE expediente_id = $1::uuid ORDER BY created_at
 	`, id)
 	if err != nil {
@@ -176,16 +200,21 @@ func (d *RouterDeps) getExpediente(w http.ResponseWriter, r *http.Request) {
 	defer docs.Close()
 	for docs.Next() {
 		var dr docResumen
-		if err := docs.Scan(&dr.ID, &dr.Titulo, &dr.PageCount, &dr.StorageKey, &dr.CreatedAt); err != nil {
+		var tipoDB string
+		if err := docs.Scan(&dr.ID, &dr.Titulo, &dr.PageCount, &dr.StorageKey, &dr.CreatedAt, &tipoDB); err != nil {
 			httpError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
+		enrichTipoPlantilla(&dr.Tipo, &dr.TipoEtiqueta, &dr.PlantillaDOCX, &dr.RolesSugeridos, tipoDB)
 		det.Documentos = append(det.Documentos, dr)
 	}
 
 	prows, err := d.Pool.Query(ctx, `
-		SELECT id::text, documento_id::text, codigo_verificacion, qr_token::text, storage_key_salida, created_at::text
-		FROM documentos_procesados WHERE expediente_id = $1::uuid ORDER BY created_at
+		SELECT p.id::text, p.documento_id::text, p.codigo_verificacion, p.qr_token::text, p.storage_key_salida, p.created_at::text,
+		       COALESCE(d.tipo::text, 'otro')
+		FROM documentos_procesados p
+		JOIN documentos d ON d.id = p.documento_id
+		WHERE p.expediente_id = $1::uuid ORDER BY p.created_at
 	`, id)
 	if err != nil {
 		httpError(w, http.StatusInternalServerError, err.Error())
@@ -194,10 +223,12 @@ func (d *RouterDeps) getExpediente(w http.ResponseWriter, r *http.Request) {
 	defer prows.Close()
 	for prows.Next() {
 		var pr procResumen
-		if err := prows.Scan(&pr.ID, &pr.DocumentoID, &pr.CodigoVerificacion, &pr.QRToken, &pr.StorageKeySalida, &pr.CreatedAt); err != nil {
+		var tipoDB string
+		if err := prows.Scan(&pr.ID, &pr.DocumentoID, &pr.CodigoVerificacion, &pr.QRToken, &pr.StorageKeySalida, &pr.CreatedAt, &tipoDB); err != nil {
 			httpError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
+		enrichTipoPlantilla(&pr.Tipo, &pr.TipoEtiqueta, &pr.PlantillaDOCX, &pr.RolesSugeridos, tipoDB)
 		det.Procesados = append(det.Procesados, pr)
 	}
 
@@ -277,6 +308,14 @@ func (d *RouterDeps) postDocumento(w http.ResponseWriter, r *http.Request) {
 	if titulo == "" {
 		titulo = hdr.Filename
 	}
+	tipoDoc := strings.TrimSpace(strings.ToLower(r.FormValue("tipo")))
+	if tipoDoc == "" {
+		tipoDoc = "otro"
+	}
+	if !plantillas.ValidTipo(tipoDoc) {
+		httpError(w, http.StatusBadRequest, "tipo de documento inválido: use GET /api/catalogo/tipos-documento")
+		return
+	}
 
 	tx, err := d.Pool.Begin(ctx)
 	if err != nil {
@@ -287,8 +326,8 @@ func (d *RouterDeps) postDocumento(w http.ResponseWriter, r *http.Request) {
 
 	_, err = tx.Exec(ctx, `
 		INSERT INTO documentos (id, expediente_id, tipo, titulo, mime, storage_key, page_count, sha256_original)
-		VALUES ($1::uuid, $2::uuid, 'otro'::tipo_documento_oj, $3, 'application/pdf', $4, $5, $6)
-	`, docID, expID, titulo, relKey, numHojas, sha)
+		VALUES ($1::uuid, $2::uuid, $3::tipo_documento_oj, $4, 'application/pdf', $5, $6, $7)
+	`, docID, expID, tipoDoc, titulo, relKey, numHojas, sha)
 	if err != nil {
 		httpError(w, http.StatusInternalServerError, err.Error())
 		return

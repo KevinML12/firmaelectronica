@@ -1,0 +1,1 @@
+-- No se pueden quitar valores de enum en PostgreSQL sin recrear el tipo.

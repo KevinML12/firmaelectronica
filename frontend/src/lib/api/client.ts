@@ -67,6 +67,10 @@ export type Hoja = {
 export type DocResumen = {
 	id: string;
 	titulo?: string;
+	tipo?: string;
+	tipo_etiqueta?: string;
+	plantilla_docx?: string;
+	roles_sugeridos?: string[];
 	page_count: number;
 	storage_key: string;
 	created_at: string;
@@ -79,6 +83,17 @@ export type ProcResumen = {
 	qr_token: string;
 	storage_key_salida: string;
 	created_at: string;
+	tipo?: string;
+	tipo_etiqueta?: string;
+	plantilla_docx?: string;
+	roles_sugeridos?: string[];
+};
+
+export type TipoDocumentoCatalogo = {
+	codigo: string;
+	etiqueta: string;
+	plantilla_docx?: string;
+	roles_sugeridos?: string[];
 };
 
 export type ExpedienteDetalle = {
@@ -136,6 +151,14 @@ async function parseJSON<T>(r: Response): Promise<T> {
 	}
 }
 
+/** GET /api/catalogo/tipos-documento */
+export async function listTiposDocumento(): Promise<TipoDocumentoCatalogo[]> {
+	const r = await apiFetch('GET', '/api/catalogo/tipos-documento');
+	const data = await parseJSON<TipoDocumentoCatalogo[] | { error?: string }>(r);
+	if (!r.ok) throw new ApiError((data as { error?: string }).error ?? 'Error', r.status, data);
+	return Array.isArray(data) ? data : [];
+}
+
 /** GET /api/expedientes */
 export async function listExpedientes(): Promise<ExpedienteListItem[]> {
 	const r = await apiFetch('GET', '/api/expedientes');
@@ -161,11 +184,13 @@ export async function getExpediente(id: string): Promise<ExpedienteDetalle> {
 export async function uploadDocumento(
 	expedienteId: string,
 	file: File,
-	titulo?: string
+	titulo?: string,
+	tipo?: string
 ): Promise<{ mensaje_corto: string; folio_inicio: number; folio_fin: number; hojas: number }> {
 	const fd = new FormData();
 	fd.append('file', file);
 	if (titulo) fd.append('titulo', titulo);
+	if (tipo?.trim()) fd.append('tipo', tipo.trim());
 	const r = await apiFetch('POST', `/api/expedientes/${encodeURIComponent(expedienteId)}/documentos`, {
 		body: fd
 	});

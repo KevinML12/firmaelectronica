@@ -45,6 +45,7 @@ func NewRouter(d RouterDeps) http.Handler {
 	r.Get("/ready", readyHandler(d))
 
 	r.Route("/api", func(r chi.Router) {
+		r.Get("/catalogo/tipos-documento", d.listTiposDocumento)
 		r.Get("/expedientes", d.listExpedientes)
 		r.Get("/expedientes/{id}", d.getExpediente)
 		r.Post("/expedientes/{id}/documentos", d.postDocumento)
@@ -66,7 +67,7 @@ func rootHandler() http.HandlerFunc {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"service": "expedientes-oj-api",
 			"hint":    "La API está en /api; estado en /health y /ready.",
-			"paths":   []string{"/health", "/ready", "/api/expedientes"},
+			"paths":   []string{"/health", "/ready", "/api/catalogo/tipos-documento", "/api/expedientes"},
 		})
 	}
 }

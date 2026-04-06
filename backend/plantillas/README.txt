@@ -18,6 +18,19 @@ Archivos:
   07               Sala de apelaciones.
   08               Notificación electrónica OJ.
 
+tipo_documento_oj (BD / subida) ↔ plantilla (código en internal/plantillas/tipo.go):
+  mtps_adjudicacion_denuncia → 01_mtps_adjudicacion_denuncia.docx
+  mtps_cedula_citacion       → 02_mtps_cedula_citacion.docx
+  mtps_acta_comparecencia    → 03_mtps_acta_comparecencia.docx
+  memorial_demanda           → 04_memorial_demanda_juzgado.docx
+  memorial_pliego            → 05_memorial_pliego_posiciones.docx
+  auto, resolucion           → 06_juzgado_resolucion_o_auto.docx
+  sala_resolucion_apelacion  → 07_sala_resolucion_apelacion.docx
+  notificacion               → 08_oj_notificacion_casillero.docx
+  oficio                     → 09_juzgado_oficio_ministro_ejecutor.docx
+  escrito                    → 04 (referencia genérica de escrito de parte)
+  otro                       → (sin plantilla fija)
+
 Roles de firma en API (POST .../firmar, campo "rol"):
   juez, secretario, oficial_v, notificador, magistrado, ministro_ejecutor,
   parte_actora, patrono_abogado, representante_demandada, inspectora_trabajo

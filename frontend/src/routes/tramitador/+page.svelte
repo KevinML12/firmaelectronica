@@ -12,6 +12,7 @@
 		demoExpedienteId,
 		getExpediente,
 		listExpedientes,
+		listTiposDocumento,
 		procesarDocumento,
 		reordenarFolios,
 		uploadDocumento,
@@ -19,7 +20,8 @@
 		cerrarExpediente,
 		tieneProcesado,
 		type ExpedienteDetalle,
-		type Hoja
+		type Hoja,
+		type TipoDocumentoCatalogo
 	} from '$lib/api/client';
 
 	let pinOpen = false;
@@ -38,6 +40,10 @@
 	let ordenLocal: Hoja[] = [];
 	let ordenSucio = false;
 	let fileInput: HTMLInputElement;
+	let tiposDocumento: TipoDocumentoCatalogo[] = [];
+	let tipoSubida = 'otro';
+
+	$: tipoSeleccionadoCatalogo = tiposDocumento.find((x) => x.codigo === tipoSubida);
 
 	/** Valor enviado al API (enum rol_firma_oj en BD). Vacío = no seleccionado. */
 	let rolFirmar = '';
@@ -69,6 +75,13 @@
 
 	onMount(() => {
 		refreshPinFromStorage();
+		void (async () => {
+			try {
+				tiposDocumento = await listTiposDocumento();
+			} catch {
+				tiposDocumento = [];
+			}
+		})();
 		cargar();
 	});
 
@@ -154,7 +167,7 @@
 		errorMsg = '';
 		okMsg = '';
 		try {
-			const r = await uploadDocumento(expediente.id, f, f.name);
+			const r = await uploadDocumento(expediente.id, f, f.name, tipoSubida);
 			okMsg = r.mensaje_corto;
 			await cargar();
 			mostrarHojas = true;
@@ -372,6 +385,32 @@
 			</p>
 		</section>
 
+		<section class="mb-4 rounded-2xl border border-oj-navy/20 bg-white p-4 shadow-sm">
+			<label for="tipo-doc-subida" class="mb-2 block text-sm font-bold text-oj-navy"
+				>Tipo de documento (alinea con plantilla DOCX en repo)</label
+			>
+			<select
+				id="tipo-doc-subida"
+				class="mb-2 w-full rounded-xl border-2 border-slate-300 bg-white p-4 text-lg"
+				disabled={subiendo || expediente.estado === 'cerrado'}
+				bind:value={tipoSubida}
+			>
+				{#if tiposDocumento.length === 0}
+					<option value="otro">Otro PDF (catálogo no cargado; por defecto)</option>
+				{:else}
+					{#each tiposDocumento as t}
+						<option value={t.codigo}>{t.etiqueta}</option>
+					{/each}
+				{/if}
+			</select>
+			{#if tipoSeleccionadoCatalogo?.plantilla_docx}
+				<p class="text-sm text-slate-600">
+					Plantilla referencia:
+					<span class="font-mono text-oj-navy">{tipoSeleccionadoCatalogo.plantilla_docx}</span>
+				</p>
+			{/if}
+		</section>
+
 		<section class="grid gap-4 sm:grid-cols-2">
 			<button
 				type="button"
@@ -438,6 +477,19 @@
 				<li class="rounded-2xl border-2 border-slate-200 bg-white p-5 shadow-sm">
 					<p class="text-lg font-bold text-slate-900">{d.titulo || 'Sin título'}</p>
 					<p class="text-sm text-slate-500">{d.page_count} hojas · {d.id.slice(0, 8)}…</p>
+					{#if d.tipo_etiqueta}
+						<p class="mt-2 text-sm font-semibold text-oj-navy">{d.tipo_etiqueta}</p>
+					{/if}
+					{#if d.plantilla_docx}
+						<p class="text-xs text-slate-600">
+							Plantilla: <span class="font-mono">{d.plantilla_docx}</span>
+						</p>
+					{/if}
+					{#if d.roles_sugeridos?.length}
+						<p class="mt-1 text-xs text-slate-600">
+							Roles sugeridos al firmar: {d.roles_sugeridos.join(', ')}
+						</p>
+					{/if}
 					{#if tieneProcesado(d.id, expediente.documentos_procesados)}
 						<p class="mt-2 font-semibold text-emerald-700">Ya procesado (estampado)</p>
 					{:else}
@@ -462,6 +514,14 @@
 				<li class="rounded-2xl border-2 border-oj-navy/20 bg-slate-50 p-6">
 					<p class="font-mono text-sm text-slate-600">ID {p.id.slice(0, 8)}…</p>
 					<p class="mt-1 font-bold text-oj-navy">Código verificación: {p.codigo_verificacion}</p>
+					{#if p.tipo_etiqueta}
+						<p class="mt-2 text-sm text-slate-700">{p.tipo_etiqueta}</p>
+					{/if}
+					{#if p.roles_sugeridos?.length}
+						<p class="mt-1 text-xs text-slate-600">
+							Roles sugeridos: {p.roles_sugeridos.join(', ')}
+						</p>
+					{/if}
 					<div class="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
 						<a
 							href="/validar/{p.qr_token}"
