@@ -117,19 +117,21 @@ async function parseJSON<T>(r: Response): Promise<T> {
 	try {
 		return JSON.parse(text) as T;
 	} catch {
-		const preview = text.slice(0, 400);
+		const preview = text.slice(0, 500);
+		const oneLine = preview.replace(/\s+/g, ' ').trim();
+		const finalUrl = r.url || '(url desconocida)';
 		pushApiLog({
 			method: '—',
-			url: '(parse JSON)',
+			url: finalUrl,
 			status: r.status,
 			ms: 0,
 			ok: false,
 			detail: preview
 		});
-		console.error('[expedientes API] La respuesta no es JSON', {
-			status: r.status,
-			preview: preview.replace(/\s+/g, ' ').trim()
-		});
+		// Un solo string: en build minificado los objetos se ven como "Object"
+		console.error(
+			`[expedientes API] No es JSON | status=${r.status} | url=${finalUrl} | inicio: ${oneLine.slice(0, 300)}`
+		);
 		throw new ApiError('Respuesta no es JSON', r.status, text);
 	}
 }
