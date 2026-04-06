@@ -8,6 +8,7 @@ Modelo de producto (intención)
 - Flujo actual para PDF subido: Subir → Procesar (folios, código, QR a validación en Vercel) → Firmar por rol (hash en backend) → Cerrar.
 
 - Carpeta docx/: archivos generados con build_docx.py (volver a ejecutar si cambia el script).
+- TIPOS_ORDEN.txt: tabla tipo_documento_oj ↔ DOCX ↔ roles (mismo orden que el API).
 - Marcadores {{VARIABLE}} para reemplazo manual o futuro motor de plantillas.
 - No se reservan líneas de firma manuscrita en el DOCX: la firma electrónica y sellos se estampan en el PDF al procesar/firmar desde el tramitador (última hoja). Los roles sugeridos siguen en el API y en internal/plantillas/tipo.go.
 

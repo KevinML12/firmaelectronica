@@ -247,6 +247,18 @@ def main() -> int:
             ),
             encoding="utf-8",
         )
+        lista_lines = [f"{i:02d}. {line.split('\t')[0]}" for i, line in enumerate(manifest, start=1)]
+        (out_dir / "LISTA_PARTES.txt").write_text(
+            "\n".join(
+                [
+                    f"Origen (PDF maestro): {src}",
+                    f"Total partes numeradas: {n}",
+                    "",
+                    *lista_lines,
+                ]
+            ),
+            encoding="utf-8",
+        )
     else:
         man_path = out_dir / "MANIFIESTO.txt"
         man_path.write_text(
@@ -263,7 +275,7 @@ def main() -> int:
     print("PDF completo:", full_path)
     print("Carpeta:", out_dir)
     if hits_1based:
-        print("Partes:", len(hits_1based), "+ separadores + MANIFIESTO.txt")
+        print("Partes:", len(hits_1based), "+ MANIFIESTO.txt + LISTA_PARTES.txt + separadores")
     return 0
 
 

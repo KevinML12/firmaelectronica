@@ -1,0 +1,20 @@
+Orden del catálogo API (GET /api/catalogo/tipos-documento) = orden del select en tramitador.
+Cada fila: # | tipo_documento_oj (subir PDF) | archivo DOCX | roles sugeridos (POST firmar)
+
+01  mtps_adjudicacion_denuncia     01_mtps_adjudicacion_denuncia.docx      parte_actora, inspectora_trabajo
+02  mtps_cedula_citacion           02_mtps_cedula_citacion.docx            inspectora_trabajo
+03  mtps_acta_comparecencia        03_mtps_acta_comparecencia.docx         parte_actora, representante_demandada, inspectora_trabajo
+04  memorial_demanda               04_memorial_demanda_juzgado.docx        parte_actora, patrono_abogado
+05  memorial_pliego                05_memorial_pliego_posiciones.docx      parte_actora
+06  auto                           06_juzgado_resolucion_o_auto.docx       juez, secretario
+07  resolucion                     06_juzgado_resolucion_o_auto.docx       juez, secretario
+08  sala_resolucion_apelacion      07_sala_resolucion_apelacion.docx       magistrado, secretario
+09  notificacion                   08_oj_notificacion_casillero.docx       notificador
+10  oficio                         09_juzgado_oficio_ministro_ejecutor.docx juez, secretario
+11  escrito                        04_memorial_demanda_juzgado.docx (ref.) parte_actora, patrono_abogado
+12  otro                           (sin plantilla fija en docx/)           —
+
+Código fuente del mapa: backend/internal/plantillas/tipo.go
+Generación DOCX mínimos: backend/plantillas/build_docx.py → docx/
+
+PDF maestro del expediente (partes separadas + limpieza): tools/prepare_expediente_firma_electronica.py

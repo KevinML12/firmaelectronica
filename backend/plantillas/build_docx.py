@@ -47,6 +47,13 @@ DOC_RELS = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 """
 
 
+def meta(tipo_bd: str, roles: str) -> str:
+	return (
+		f"[Expedientes OJ — tramitador] tipo_documento_oj: {tipo_bd} | "
+		f"roles sugeridos al firmar: {roles}"
+	)
+
+
 def write_docx(path: Path, paragraphs: list[str]) -> None:
 	path.parent.mkdir(parents=True, exist_ok=True)
 	with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -58,6 +65,8 @@ def write_docx(path: Path, paragraphs: list[str]) -> None:
 
 TEMPLATES: dict[str, list[str]] = {
 	"01_mtps_adjudicacion_denuncia.docx": [
+		meta("mtps_adjudicacion_denuncia", "parte_actora, inspectora_trabajo"),
+		"",
 		"PLANTILLA — Adjudicación / acta inicial de denuncia (Inspección de Trabajo)",
 		"Adjudicación No. {{ADJUDICACION_NUMERO}} · Fecha y hora: {{FECHA_HORA}} · Lugar: {{LUGAR_MTPS}}",
 		"",
@@ -70,6 +79,8 @@ TEMPLATES: dict[str, list[str]] = {
 		"Audiencia fijada: {{FECHA_AUDIENCIA}}",
 	],
 	"02_mtps_cedula_citacion.docx": [
+		meta("mtps_cedula_citacion", "inspectora_trabajo"),
+		"",
 		"PLANTILLA — Cédula de citación (conciliación MTPS)",
 		"Adjudicación No. {{ADJUDICACION_NUMERO}}",
 		"Interpuesta por: {{ACTOR}} · Citado: {{DEMANDADO_CITACION}}",
@@ -77,6 +88,11 @@ TEMPLATES: dict[str, list[str]] = {
 		"{{TEXTO_CITACION}}",
 	],
 	"03_mtps_acta_comparecencia.docx": [
+		meta(
+			"mtps_acta_comparecencia",
+			"parte_actora, representante_demandada, inspectora_trabajo",
+		),
+		"",
 		"PLANTILLA — Acta de comparecencia / audiencia / agotamiento vía administrativa",
 		"Adjudicación No. {{ADJUDICACION_NUMERO}} · Fecha: {{FECHA}}",
 		"",
@@ -85,6 +101,8 @@ TEMPLATES: dict[str, list[str]] = {
 		"{{ACTA_DESARROLLO}}",
 	],
 	"04_memorial_demanda_juzgado.docx": [
+		meta("memorial_demanda (o escrito genérico)", "parte_actora, patrono_abogado"),
+		"",
 		"PLANTILLA — Demanda / memorial (juicio ordinario laboral — juzgado)",
 		"Juzgado: {{JUZGADO}} · Expediente: {{EXPEDIENTE_JUDICIAL}}",
 		"Actora: {{ACTOR}} · Demandada: {{DEMANDADA}}",
@@ -98,6 +116,8 @@ TEMPLATES: dict[str, list[str]] = {
 		"Lugar y fecha: {{LUGAR_FECHA}}",
 	],
 	"05_memorial_pliego_posiciones.docx": [
+		meta("memorial_pliego", "parte_actora"),
+		"",
 		"PLANTILLA — Plica / pliego de posiciones (confesional)",
 		"Juicio: {{REFERENCIA_JUICIO}}",
 		"",
@@ -107,6 +127,8 @@ TEMPLATES: dict[str, list[str]] = {
 		"{{PLIEGO_POSICIONES}}",
 	],
 	"06_juzgado_resolucion_o_auto.docx": [
+		meta("auto o resolucion", "juez, secretario"),
+		"",
 		"PLANTILLA — Resolución / auto (juzgado 1.ª instancia laboral)",
 		"Juzgado: {{JUZGADO}} · Expediente: {{EXPEDIENTE_JUDICIAL}} · Oficio: {{OFICIO}}",
 		"",
@@ -116,6 +138,8 @@ TEMPLATES: dict[str, list[str]] = {
 		"{{FALLO}}",
 	],
 	"07_sala_resolucion_apelacion.docx": [
+		meta("sala_resolucion_apelacion", "magistrado, secretario"),
+		"",
 		"PLANTILLA — Auto / resolución (Sala de Apelaciones)",
 		"Sala: {{SALA}} · Recurso: {{REFERENCIA_RECURSO}}",
 		"",
@@ -125,6 +149,8 @@ TEMPLATES: dict[str, list[str]] = {
 		"{{FALLO_SALA}}",
 	],
 	"08_oj_notificacion_casillero.docx": [
+		meta("notificacion", "notificador"),
+		"",
 		"PLANTILLA — Constancia de notificación electrónica (OJ / casillero)",
 		"Notificación No. {{NO_NOTIFICACION}} · Expediente: {{EXPEDIENTE_JUDICIAL}}",
 		"Notificado: {{NOTIFICADO}} · Casillero: {{CASILLERO}}",
@@ -133,6 +159,8 @@ TEMPLATES: dict[str, list[str]] = {
 		"{{TEXTO_ADICIONAL}}",
 	],
 	"09_juzgado_oficio_ministro_ejecutor.docx": [
+		meta("oficio", "juez, secretario"),
+		"",
 		"PLANTILLA — Oficio / despacho a ministro ejecutor (ejecución laboral)",
 		"Juzgado: {{JUZGADO}} · Expediente: {{EXPEDIENTE_JUDICIAL}}",
 		"",
