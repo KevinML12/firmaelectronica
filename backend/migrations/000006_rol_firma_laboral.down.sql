@@ -1,10 +1,1 @@
-DELETE FROM usuarios WHERE id IN (
-    '33333333-3333-4333-8333-333333333304'::uuid,
-    '33333333-3333-4333-8333-333333333305'::uuid,
-    '33333333-3333-4333-8333-333333333306'::uuid,
-    '33333333-3333-4333-8333-333333333307'::uuid,
-    '33333333-3333-4333-8333-333333333308'::uuid,
-    '33333333-3333-4333-8333-333333333309'::uuid,
-    '33333333-3333-4333-8333-333333333310'::uuid
-);
--- Los valores añadidos a rol_firma_oj no se eliminan (limitación de PostgreSQL).
+-- No se pueden quitar valores de enum en PostgreSQL sin recrear el tipo.
