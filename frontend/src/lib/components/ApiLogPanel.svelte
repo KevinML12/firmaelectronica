@@ -22,7 +22,7 @@
 {#if browser}
 	<button
 		type="button"
-		class="fixed bottom-4 right-4 z-[60] rounded-full border border-white/20 bg-slate-900/90 px-4 py-2 text-sm font-medium text-slate-200 shadow-lg backdrop-blur hover:bg-slate-800"
+		class="fixed bottom-4 right-4 z-[9999] rounded-full border-2 border-amber-400/80 bg-slate-900 px-4 py-2 text-sm font-bold text-amber-100 shadow-xl backdrop-blur hover:bg-slate-800"
 		on:click={() => (open = !open)}
 		aria-expanded={open}
 	>
@@ -31,7 +31,7 @@
 
 	{#if open}
 		<div
-			class="fixed inset-x-3 bottom-16 top-auto z-[59] max-h-[55vh] flex flex-col rounded-xl border border-white/15 bg-slate-950/95 shadow-2xl backdrop-blur-md md:left-auto md:right-4 md:w-[min(32rem,92vw)] md:max-h-[70vh]"
+			class="fixed inset-x-3 bottom-16 top-auto z-[9998] max-h-[55vh] flex flex-col rounded-xl border border-white/15 bg-slate-950/95 shadow-2xl backdrop-blur-md md:left-auto md:right-4 md:w-[min(32rem,92vw)] md:max-h-[70vh]"
 			role="dialog"
 			aria-label="Registro de llamadas al API"
 		>
