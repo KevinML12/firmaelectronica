@@ -60,11 +60,20 @@ func ReordenarFolios(ctx context.Context, pool *pgxpool.Pool, expedienteID strin
 		}
 	}
 
+	// Fase 1: desplazar folios fuera del rango 1..n para no chocar con UNIQUE ni con
+	// CHECK (folio_numero >= 1). Antes se usaba -folio_numero, lo cual viola el CHECK.
+	var maxFolio int64
+	err = tx.QueryRow(ctx, `
+		SELECT COALESCE(MAX(folio_numero), 0) FROM expediente_folio_hoja WHERE expediente_id = $1::uuid
+	`, expedienteID).Scan(&maxFolio)
+	if err != nil {
+		return fmt.Errorf("max folio reorden: %w", err)
+	}
 	_, err = tx.Exec(ctx, `
 		UPDATE expediente_folio_hoja
-		SET folio_numero = -folio_numero, updated_at = now()
+		SET folio_numero = folio_numero + $2::bigint, updated_at = now()
 		WHERE expediente_id = $1::uuid
-	`, expedienteID)
+	`, expedienteID, maxFolio)
 	if err != nil {
 		return fmt.Errorf("fase 1 reorden: %w", err)
 	}
